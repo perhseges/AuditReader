@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
+using System.Text.Json;
 
-public static class GzipExtensions
+public static class GzipBytes
 {
     /// <summary>
     /// Gzip from a stream to another stream
@@ -60,6 +61,24 @@ public static class GzipExtensions
             inStream.GZipStream(mso, gzipMode);
             return mso.ToArray();
         }
+    }
+
+    public static async Task<byte[]> FromObjectAsync<T>(T data)
+    {
+        using var datastream = new MemoryStream();
+        await JsonSerializer.SerializeAsync(datastream, data);
+        var compressedbytes = datastream.GZipBytes(CompressionMode.Compress);
+        return compressedbytes;
+    }
+
+    public static async Task<T?> ToObjectAsync<T>(byte[] compressedbytes)
+    {
+        var decompressedbytes = compressedbytes.GZipBytes(CompressionMode.Decompress);
+
+        using var datastream = new MemoryStream(decompressedbytes);
+        T? decompressedobject = await JsonSerializer.DeserializeAsync<T>(datastream);
+
+        return decompressedobject;
     }
 
 }
